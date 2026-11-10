@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F6F7FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1424" media="(prefers-color-scheme: dark)">
+<title>Dashboard Usage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #F6F7FB;
+    --panel: #FFFFFF;
+    --ink: #15213B;
+    --ink-2: #4A5672;
+    --ink-3: #8590A8;
+    --rule: #E3E7EF;
+    --bar: #3355C9;
+    --bar-soft: #DCE3F7;
+    --gold: #F2C811;
+    --gold-ink: #7A6000;
+    --live: #1E9E62;
+    --danger: #C23B3B;
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --paper: #0E1424; --panel: #151D31; --ink: #EEF1F8; --ink-2: #B5BED3; --ink-3: #7C87A2;
+      --rule: #24304A; --bar: #6B8BF0; --bar-soft: #24345F; --gold-ink: #F2C811; --live: #3CCB86; --danger: #EF7A7A;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0E1424; --panel: #151D31; --ink: #EEF1F8; --ink-2: #B5BED3; --ink-3: #7C87A2;
+    --rule: #24304A; --bar: #6B8BF0; --bar-soft: #24345F; --gold-ink: #F2C811; --live: #3CCB86; --danger: #EF7A7A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body);
+               -webkit-font-smoothing: antialiased; }
+  body { padding: 0 16px calc(48px + env(safe-area-inset-bottom)); }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; border-radius: 6px; }
+  h2 { font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.2px; margin: 0; }
+
+  /* ---------- Lock screen ---------- */
+  .lock { min-height: 100svh; display: grid; place-items: center; }
+  .lock form { width: 100%; max-width: 340px; }
+  .lock .mark { width: 44px; height: 44px; border-radius: 12px; background: var(--gold); display: grid; place-items: center; margin-bottom: 22px; }
+  .lock .mark svg { width: 22px; height: 22px; stroke: #15213B; }
+  .lock h1 { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1.05; letter-spacing: -1px; margin: 0 0 10px; }
+  .lock p { color: var(--ink-2); margin: 0 0 22px; line-height: 1.5; }
+  .lock input { width: 100%; padding: 14px 16px; border: 1.5px solid var(--rule); border-radius: 14px;
+                background: var(--panel); font-size: 17px; }
+  .lock input:focus { border-color: var(--bar); outline: none; }
+  .primary { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 14px; background: var(--ink); color: var(--paper);
+             font-weight: 600; font-size: 16px; cursor: pointer; }
+  .primary:disabled { opacity: .6; }
+  .err { color: var(--danger); font-size: 14px; min-height: 20px; margin-top: 12px; }
+
+  /* ---------- Top bar ---------- */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+         padding: calc(14px + env(safe-area-inset-top)) 0 10px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .brand { white-space: nowrap; }
+  .brand .short { display: none; }
+  @media (max-width: 420px) { .brand .long { display: none; } .brand .short { display: inline; } }
+  .brand .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--gold); }
+  .actions { display: flex; align-items: center; gap: 6px; }
+  .status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2);
+            padding: 7px 11px; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); white-space: nowrap; }
+  .status.is-live { color: var(--ink); border-color: color-mix(in srgb, var(--live) 45%, var(--rule)); }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); position: relative; flex: none; }
+  .is-live .pulse { background: var(--live); }
+  .is-live .pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--live);
+                           opacity: 0; animation: ring 1.8s ease-out infinite; }
+  @keyframes ring { 0% { transform: scale(.5); opacity: .8; } 100% { transform: scale(1.4); opacity: 0; } }
+  .icon { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent;
+          border-radius: 10px; cursor: pointer; }
+  .icon:hover { background: var(--panel); }
+  .icon svg { width: 18px; height: 18px; stroke: var(--ink-2); }
+  .spin svg { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Filters ---------- */
+  .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 26px; }
+  .seg { display: inline-flex; gap: 2px; background: var(--rule); border-radius: 12px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 7px 13px; border-radius: 9px; cursor: pointer;
+                font-size: 14px; font-weight: 500; color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(21,33,59,.12); }
+  .select { position: relative; }
+  .select select { appearance: none; -webkit-appearance: none; border: 0; background: var(--rule); border-radius: 12px;
+                   padding: 10px 34px 10px 14px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .select::after { content: ""; position: absolute; right: 14px; top: 50%; width: 7px; height: 7px; margin-top: -6px;
+                   border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); pointer-events: none; }
+
+  /* ---------- Hero sentence ---------- */
+  .hero { margin-bottom: 26px; }
+  .hero .line1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 8.6vw, 54px);
+                 line-height: 1.04; letter-spacing: -1.2px; margin: 0; color: var(--ink-2); }
+  .hero .n { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .hero .line2 { font-size: 18px; line-height: 1.45; color: var(--ink-2); margin: 12px 0 0; max-width: 34ch; }
+  .hero .line2 strong { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .hero .range { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+  .bump { animation: bump 1.2s ease-out; }
+  @keyframes bump { 0% { background: color-mix(in srgb, var(--gold) 55%, transparent); } 100% { background: transparent; } }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+           margin-bottom: 26px; }
+  .fact { padding: 14px 12px 14px 0; }
+  .fact + .fact { padding-left: 12px; border-left: 1px solid var(--rule); }
+  .fact .v { font-family: var(--display); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .fact .l { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; line-height: 1.35; }
+
+  /* ---------- Chart panel ---------- */
+  .panel { background: var(--panel); border-radius: 22px; padding: 18px 16px 12px; margin-bottom: 30px;
+           box-shadow: 0 1px 0 var(--rule), 0 10px 30px -18px rgba(21,33,59,.25); }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .legend { display: flex; gap: 12px; font-size: 12px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; touch-action: pan-y; }
+  .chart .axis { fill: var(--ink-3); font-size: 11px; font-family: var(--body); }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 13px;
+         padding: 8px 11px; border-radius: 10px; white-space: nowrap; transform: translate(-50%, -100%); line-height: 1.45; z-index: 2; }
+  .tip b { font-weight: 600; }
+
+  /* ---------- Sections ---------- */
+  section.block { margin-bottom: 30px; }
+  .block > h2 { margin-bottom: 4px; }
+  .block > .sub { font-size: 13.5px; color: var(--ink-3); margin: 0 0 12px; }
+
+  .dash { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+  .dash:first-of-type { border-top: 1px solid var(--rule); }
+  .dash-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .dash-name { font-weight: 600; font-size: 16px; }
+  .dash-views { font-family: var(--display); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .dash-views small { font-family: var(--body); font-size: 12px; font-weight: 500; color: var(--ink-3); margin-left: 4px; }
+  .share { height: 6px; background: var(--bar-soft); border-radius: 3px; margin: 9px 0 9px; overflow: hidden; }
+  .share > div { height: 100%; background: var(--bar); border-radius: 3px; }
+  .dash-stats { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+  .dash-stats b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .split { display: grid; gap: 30px; margin-bottom: 30px; }
+  @media (min-width: 640px) { .split { grid-template-columns: 1fr 1fr; } }
+  .split section.block { margin-bottom: 0; }
+  .rows { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; font-size: 14px; }
+  .row .cnt { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .row .track { grid-column: 1 / -1; height: 6px; background: var(--bar-soft); border-radius: 3px; overflow: hidden; }
+  .row .track > div { height: 100%; background: var(--bar); border-radius: 3px; }
+
+  .feed { list-style: none; margin: 0; padding: 0; }
+  .feed li { display: grid; grid-template-columns: 12px 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+  .feed li:first-child { border-top: 1px solid var(--rule); }
+  .feed .mk { width: 8px; height: 8px; border-radius: 50%; background: var(--rule); margin-top: 6px; }
+  .feed .live .mk { background: var(--live); box-shadow: 0 0 0 4px color-mix(in srgb, var(--live) 20%, transparent); }
+  .feed .what { font-weight: 500; font-size: 15px; }
+  .feed .src { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--bar-soft);
+               color: var(--ink); margin-left: 6px; vertical-align: 1px; }
+  .feed .dur { font-family: var(--display); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; text-align: right; }
+  .feed .meta { grid-column: 2 / 4; font-size: 12.5px; color: var(--ink-3); }
+  .feed .live .meta .now { color: var(--live); font-weight: 600; }
+
+  .empty { color: var(--ink-3); font-size: 14px; padding: 18px 0; }
+  .foot { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-3); padding-top: 6px; }
+  .foot a { color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Lock screen -->
+<div id="lock" class="lock hidden">
+  <form id="pinForm" autocomplete="off">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+    <h1>Who's looking at your dashboards?</h1>
+    <p>Enter your stats PIN to see views and time spent.</p>
+    <input id="pin" type="password" placeholder="Stats PIN" aria-label="Stats PIN" required>
+    <button class="primary" type="submit" id="pinBtn">Show my stats</button>
+    <div class="err" id="pinErr" role="alert"></div>
+  </form>
+</div>
+
+<!-- Stats -->
+<div id="app" class="wrap hidden">
+  <div class="top">
+    <div class="brand"><span class="dot"></span><span class="long">Dashboard usage</span><span class="short">Usage</span></div>
+    <div class="actions">
+      <span class="status" id="status"><span class="pulse"></span><span id="statusText">Loading</span></span>
+      <button class="icon" id="refreshBtn" title="Refresh now" aria-label="Refresh now">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="icon" id="lockBtn" title="Lock" aria-label="Lock stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="seg" id="range" role="group" aria-label="Date range">
+      <button data-days="7" aria-pressed="false">7 days</button>
+      <button data-days="30" aria-pressed="true">30 days</button>
+      <button data-days="90" aria-pressed="false">90 days</button>
+      <button data-days="0" aria-pressed="false">All</button>
+    </div>
+    <label class="select"><select id="report" aria-label="Dashboard"><option value="">All dashboards</option></select></label>
+  </div>
+
+  <div class="hero">
+    <p class="line1"><span class="n" id="hViews">0</span> <span id="hViewsWord">views</span> from <span class="n" id="hPeople">0</span> <span id="hPeopleWord">people</span></p>
+    <p class="line2" id="hLine2">&nbsp;</p>
+    <div class="range" id="hRange"></div>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><div class="v" id="fEngaged">0%</div><div class="l">clicked into the report</div></div>
+    <div class="fact"><div class="v" id="fMedian">0s</div><div class="l">typical visit (median)</div></div>
+    <div class="fact"><div class="v" id="fBounce">0%</div><div class="l">left within 10 seconds</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Views per day</h2>
+      <div class="legend"><span><i style="background:var(--bar)"></i>Views</span><span><i style="background:var(--gold)"></i>Today</span></div>
+    </div>
+    <div class="chart" id="chart"></div>
+  </div>
+
+  <section class="block">
+    <h2>By dashboard</h2>
+    <p class="sub">Time counts only while the dashboard is open on screen</p>
+    <div id="byReport"></div>
+  </section>
+
+  <div class="split">
+    <section class="block">
+      <h2>Where views come from</h2>
+      <p class="sub">From the &amp;src= tag on links you share</p>
+      <div class="rows" id="bySrc"></div>
+    </section>
+    <section class="block">
+      <h2>Devices</h2>
+      <p class="sub">Phone, tablet or computer</p>
+      <div class="rows" id="byDevice"></div>
+    </section>
+  </div>
+
+  <section class="block">
+    <h2>Latest visits</h2>
+    <p class="sub">The 25 most recent in this range</p>
+    <ul class="feed" id="recent"></ul>
+  </section>
+
+  <div class="foot"><span>Updates every 30 seconds</span><a href="./">Open dashboards</a></div>
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+const CONFIG = {
+  SUPABASE_URL: "https://slygodiwvaaqxtwekupi.supabase.co",
+  SUPABASE_KEY: "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG",
+  TITLES: Object.assign({ sales: "Sales (old link)", noiva: "Noiva (old link)", default: "Test visits" },
+    Object.fromEntries(Object.entries((window.PORTAL && window.PORTAL.REPORTS) || {}).map(([k, r]) => [k, r.title]))),
+  REFRESH_SECONDS: 30
+};
+
+(function () {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const title = k => CONFIG.TITLES[k] || k;
+  const nf = n => Number(n || 0).toLocaleString("en-KE");
+  const plural = (n, one, many) => Number(n) === 1 ? one : many;
+  function dur(sec) {
+    sec = Math.round(sec || 0);
+    if (sec < 60) return sec + "s";
+    if (sec < 3600) { const m = Math.floor(sec / 60), s = sec % 60; return m + "m" + (s ? " " + s + "s" : ""); }
+    const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h + "h" + (m ? " " + m + "m" : "");
+  }
+  const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "0%";
+  const dayLong = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const dayShort = iso => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  function ago(ts) {
+    const s = Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 1000));
+    if (s < 45) return "just now";
+    if (s < 3600) return Math.round(s / 60) + " min ago";
+    if (s < 86400) return Math.round(s / 3600) + " h ago";
+    if (s < 172800) return "yesterday";
+    return new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+
+  let pin = store.get("pbi_stats_pin");
+  let days = 30, report = "", lastData = null, lastLoad = 0, timer = null, loading = false;
+
+  async function fetchStats() {
+    const res = await fetch(CONFIG.SUPABASE_URL + "/rest/v1/rpc/get_usage_stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": CONFIG.SUPABASE_KEY },
+      body: JSON.stringify({ p_pin: pin, p_days: days, p_report: report || null })
+    });
+    if (!res.ok) throw new Error("Couldn't reach the stats database (error " + res.status + "). Check that stats.sql was run in Supabase.");
+    return res.json();
+  }
+
+  function showLock(msg) {
+    stopTimer();
+    $("app").classList.add("hidden");
+    $("lock").classList.remove("hidden");
+    $("pinErr").textContent = msg || "";
+    $("pin").value = "";
+    setTimeout(() => $("pin").focus(), 50);
+  }
+
+  async function load(opts) {
+    if (loading) return false;
+    loading = true;
+    $("refreshBtn").classList.add("spin");
+    try {
+      const data = await fetchStats();
+      if (!data.ok) {
+        if (/PIN|attempts/i.test(data.error)) { store.del("pbi_stats_pin"); pin = null; }
+        showLock(data.error);
+        return false;
+      }
+      const prev = lastData;
+      lastData = data; lastLoad = Date.now();
+      $("lock").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      render(data, opts && opts.silent ? prev : null);
+      startTimer();
+      return true;
+    } catch (e) {
+      if ($("app").classList.contains("hidden")) showLock(e.message);
+      else { $("statusText").textContent = "Offline, retrying"; }
+      return false;
+    } finally {
+      loading = false;
+      $("refreshBtn").classList.remove("spin");
+    }
+  }
+
+  function setNum(id, text, prevText) {
+    const el = $(id);
+    el.textContent = text;
+    if (prevText != null && prevText !== text) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+  }
+
+  function renderStatus() {
+    if (!lastData) return;
+    const live = lastData.live_now;
+    const st = $("status");
+    if (typeof live === "number" && live > 0) {
+      st.classList.add("is-live");
+      $("statusText").textContent = live + " viewing now";
+    } else {
+      st.classList.remove("is-live");
+      const s = Math.round((Date.now() - lastLoad) / 1000);
+      $("statusText").textContent = s < 10 ? "Up to date" : "Updated " + (s < 60 ? s + "s" : Math.round(s / 60) + "m") + " ago";
+    }
+  }
+
+  function render(d, prev) {
+    // Dashboard filter options
+    const sel = $("report"), keys = d.reports || [];
+    const have = Array.from(sel.options).map(o => o.value);
+    if (keys.some(k => have.indexOf(k) === -1)) {
+      sel.innerHTML = '<option value="">All dashboards</option>' +
+        keys.map(k => '<option value="' + esc(k) + '">' + esc(title(k)) + "</option>").join("");
+      sel.value = report;
+    }
+
+    const t = d.totals, pt = prev && prev.totals;
+    setNum("hViews", nf(t.views), pt && nf(pt.views));
+    $("hViewsWord").textContent = plural(t.views, "view", "views");
+    setNum("hPeople", nf(t.unique_visitors), pt && nf(pt.unique_visitors));
+    $("hPeopleWord").textContent = plural(t.unique_visitors, "person", "people");
+    $("hLine2").innerHTML = t.views
+      ? "They stayed <strong>" + dur(t.avg_seconds) + "</strong> on average, <strong>" + dur(t.total_seconds) + "</strong> in total."
+      : "No one has opened a dashboard in this range yet. Share a link to get started.";
+    $("hRange").textContent = d.from ? dayShort(d.from) + " to " + dayShort(d.to) : "All time";
+    setNum("fEngaged", pct(t.engaged, t.views), pt && pct(pt.engaged, pt.views));
+    setNum("fMedian", dur(t.median_seconds), pt && dur(pt.median_seconds));
+    setNum("fBounce", pct(t.bounces, t.views), pt && pct(pt.bounces, pt.views));
+
+    renderStatus();
+    renderChart(d);
+
+    // By dashboard
+    const br = d.by_report || [];
+    $("byReport").innerHTML = br.length ? br.map(r =>
+      '<div class="dash"><div class="dash-top"><span class="dash-name">' + esc(title(r.report_key)) + '</span>' +
+      '<span class="dash-views">' + nf(r.views) + "<small>" + plural(r.views, "view", "views") + "</small></span></div>" +
+      '<div class="share"><div style="width:' + Math.max(2, 100 * r.views / Math.max(1, t.views)) + '%"></div></div>' +
+      '<div class="dash-stats"><span><b>' + nf(r.unique_visitors) + "</b> " + plural(r.unique_visitors, "person", "people") + "</span>" +
+      "<span><b>" + dur(r.avg_seconds) + "</b> average</span><span><b>" + dur(r.total_seconds) + "</b> total</span></div></div>"
+    ).join("") : '<div class="empty">No views in this range yet.</div>';
+
+    rows("bySrc", d.by_src);
+    rows("byDevice", d.by_device);
+    renderFeed();
+  }
+
+  function rows(id, list) {
+    list = list || [];
+    const max = Math.max(1, ...list.map(r => r.views));
+    $(id).innerHTML = list.length ? list.slice(0, 8).map(r =>
+      '<div class="row"><span>' + esc(r.label) + '</span><span class="cnt">' + nf(r.views) + "</span>" +
+      '<div class="track"><div style="width:' + Math.max(2, 100 * r.views / max) + '%"></div></div></div>'
+    ).join("") : '<div class="empty">No data yet.</div>';
+  }
+
+  function renderFeed() {
+    const rc = (lastData && lastData.recent) || [];
+    $("recent").innerHTML = rc.length ? rc.map(r =>
+      '<li class="' + (r.live ? "live" : "") + '"><span class="mk"></span>' +
+      '<div class="what">' + esc(title(r.report_key)) + '<span class="src">' + esc(r.src) + "</span></div>" +
+      '<div class="dur">' + dur(r.active_seconds) + "</div>" +
+      '<div class="meta">' + (r.live ? '<span class="now">Viewing now</span>' : esc(ago(r.started_at))) +
+      ", " + esc(r.device || "unknown device") + (r.engaged ? ", clicked in" : "") + "</div></li>"
+    ).join("") : '<li class="empty" style="display:block;border:0">No visits yet. Share a dashboard link to see them here.</li>';
+  }
+
+  function renderChart(d) {
+    const el = $("chart");
+    const byDay = {};
+    (d.daily || []).forEach(r => { byDay[r.day] = r; });
+    const start = d.from || (d.daily && d.daily[0] && d.daily[0].day);
+    if (!start) { el.innerHTML = '<div class="empty">No views in this range yet.</div>'; return; }
+
+    const series = [];
+    for (let dt = new Date(start + "T00:00:00"), end = new Date(d.to + "T00:00:00"); dt <= end; dt.setDate(dt.getDate() + 1)) {
+      const iso = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+      series.push(byDay[iso] || { day: iso, views: 0, visitors: 0, avg_seconds: 0 });
+    }
+
+    const W = Math.max(280, el.clientWidth), H = 190, padL = 26, padB = 24, padT = 10;
+    const cw = W - padL, ch = H - padB - padT;
+    const maxV = Math.max(1, ...series.map(s => s.views));
+    const step = maxV <= 4 ? 1 : Math.ceil(maxV / 4);
+    const top = step * Math.ceil(maxV / step);
+    const slot = cw / series.length;
+    const gap = slot > 6 ? 2 : 0;
+    const bw = Math.max(1, Math.min(slot - gap, 28));
+    const off = (slot - bw) / 2;
+    const last = series.length - 1;
+
+    let svg = '<svg viewBox="0 0 ' + W + " " + H + '" height="' + H + '" role="img" aria-label="Views per day">';
+    for (let v = 0; v <= top; v += step) {
+      const y = padT + ch - (v / top) * ch;
+      svg += '<line x1="' + padL + '" x2="' + W + '" y1="' + y + '" y2="' + y + '" stroke="var(--rule)" stroke-width="1"' +
+             (v === 0 ? "" : ' stroke-dasharray="2 4"') + "/>" +
+             '<text class="axis" x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + v + "</text>";
+    }
+    series.forEach((s, i) => {
+      const h = (s.views / top) * ch, x = padL + i * slot + off, y = padT + ch - h;
+      if (h > 0) {
+        const r = Math.min(4, bw / 2, h);
+        svg += '<path fill="' + (i === last ? "var(--gold)" : "var(--bar)") + '" d="M' + x + "," + (padT + ch) + "V" + (y + r) +
+               "Q" + x + "," + y + " " + (x + r) + "," + y + "H" + (x + bw - r) + "Q" + (x + bw) + "," + y + " " + (x + bw) + "," + (y + r) +
+               "V" + (padT + ch) + 'Z"/>';
+      }
+      svg += '<rect class="hit" data-i="' + i + '" x="' + (padL + i * slot) + '" y="0" width="' + slot + '" height="' + (padT + ch) + '" fill="transparent"/>';
+    });
+    const ticks = series.length === 1 ? [0] : [0, Math.floor(last / 2), last];
+    ticks.forEach((i, n) => {
+      const anchor = series.length === 1 ? "middle" : n === 0 ? "start" : n === ticks.length - 1 ? "end" : "middle";
+      const ax = anchor === "start" ? padL + i * slot : anchor === "end" ? padL + (i + 1) * slot : padL + i * slot + slot / 2;
+      svg += '<text class="axis" x="' + ax + '" y="' + (H - 5) + '" text-anchor="' + anchor + '">' +
+             (i === last ? "Today" : dayShort(series[i].day)) + "</text>";
+    });
+    svg += "</svg>";
+    el.innerHTML = svg + '<div class="tip hidden" id="tip"></div>';
+
+    const tip = $("tip"), svgEl = el.querySelector("svg");
+    function show(ev) {
+      const t = ev.target.closest ? ev.target.closest(".hit") : null;
+      if (!t) return;
+      const s = series[+t.dataset.i];
+      tip.innerHTML = "<b>" + esc(+t.dataset.i === last ? "Today" : dayLong(s.day)) + "</b><br>" +
+        nf(s.views) + " " + plural(s.views, "view", "views") + ", " + nf(s.visitors) + " " + plural(s.visitors, "person", "people") +
+        (s.views ? "<br>" + dur(s.avg_seconds) + " average" : "");
+      const box = el.getBoundingClientRect(), rb = t.getBoundingClientRect();
+      tip.style.left = Math.min(Math.max(rb.left - box.left + rb.width / 2, 80), box.width - 80) + "px";
+      tip.style.top = "6px";
+      tip.classList.remove("hidden");
+    }
+    svgEl.addEventListener("mousemove", show);
+    svgEl.addEventListener("click", show);
+    svgEl.addEventListener("mouseleave", () => tip.classList.add("hidden"));
+  }
+
+  // Auto refresh: every 30s while the page is on screen, and right away when you come back to it
+  function startTimer() {
+    stopTimer();
+    timer = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastLoad >= CONFIG.REFRESH_SECONDS * 1000) load({ silent: true });
+      else { renderStatus(); renderFeed(); }
+    }, 5000);
+  }
+  function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && pin && Date.now() - lastLoad > 10000) load({ silent: true });
+  });
+
+  // Events
+  $("pinForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    pin = $("pin").value.trim();
+    if (!pin) return;
+    $("pinBtn").disabled = true; $("pinErr").textContent = "";
+    const ok = await load();
+    $("pinBtn").disabled = false;
+    if (ok) store.set("pbi_stats_pin", pin);
+  });
+  $("refreshBtn").addEventListener("click", () => load({ silent: true }));
+  $("lockBtn").addEventListener("click", () => { store.del("pbi_stats_pin"); pin = null; lastData = null; showLock(""); });
+  $("range").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    days = +b.dataset.days;
+    Array.from($("range").children).forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    load();
+  });
+  $("report").addEventListener("change", e => { report = e.target.value; load(); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => lastData && renderChart(lastData), 150); });
+
+  if (pin) load(); else showLock("");
+})();
+</script>
+</body>
+</html>

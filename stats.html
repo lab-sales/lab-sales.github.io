@@ -263,16 +263,18 @@
     <ul class="feed" id="recent"></ul>
   </section>
 
-  <div class="foot"><span>Updates every 30 seconds</span><a href="./">Open dashboards</a></div>
+  <div class="foot"><span>Updates every 30 seconds</span><span></span></div>
 </div>
 
-<script src="assets/config.js"></script>
 <script>
 const CONFIG = {
   SUPABASE_URL: "https://slygodiwvaaqxtwekupi.supabase.co",
   SUPABASE_KEY: "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG",
-  TITLES: Object.assign({ sales: "Sales (old link)", noiva: "Noiva (old link)", default: "Test visits" },
-    Object.fromEntries(Object.entries((window.PORTAL && window.PORTAL.REPORTS) || {}).map(([k, r]) => [k, r.title]))),
+  TITLES: {
+    "full-sales": "Full Sales", "key-accounts-sales": "Key Accounts Sales", "open-market-sales": "Open Market Sales",
+    "noiva-sales": "Noiva Sales", "travega-sales": "Travega Sales", "magnovia-sales": "Magnovia Sales",
+    sales: "Sales (old link)", noiva: "Noiva (old link)", default: "Test visits"
+  },
   REFRESH_SECONDS: 30
 };
 

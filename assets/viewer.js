@@ -1,12 +1,12 @@
 /* Shows one dashboard and records anonymous usage (visits and time on screen). */
 (function () {
   const C = window.PORTAL;
-  const key = window.REPORT_KEY;
-  const report = C && C.REPORTS[key];
+  const report = C && C.REPORT;
+  const key = report && report.key;
   const params = new URLSearchParams(location.search);
   const iframe = document.getElementById("report");
 
-  if (!report) { location.replace("../"); return; }
+  if (!report) return;
   iframe.src = report.url;
 
   // Owner opt-out: open any page once with ?notrack=1 (or ?notrack=0 to re-enable)

@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <title>Sales &amp; Incentive Dashboards</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/portal.css">
-<script src="assets/config.js"></script>
 <script>
-  // Old ?r= links: send to the new short link, or to this menu if that dashboard was retired
+  // Owner opt-out still works here: ?notrack=1 / ?notrack=0
   (function () {
-    var p = new URLSearchParams(location.search), r = p.get("r");
-    if (!r) return;
-    p.delete("r");
-    var rest = p.toString();
-    if (window.PORTAL.REPORTS[r]) location.replace(r + "/" + (rest ? "?" + rest : ""));
-    else history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
+    var p = new URLSearchParams(location.search);
+    try {
+      if (p.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
+      if (p.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
+    } catch (e) {}
+    if (p.has("r") || p.has("notrack")) history.replaceState(null, "", location.pathname);
   })();
 </script>
 </head>
@@ -25,29 +25,8 @@
 <main class="menu">
   <div class="brand"><span class="dot"></span>Sales &amp; Marketing</div>
   <h1>Sales &amp; incentive dashboards</h1>
-  <p class="lede">Open your team's dashboard to see sales performance and incentive progress.</p>
-  <ul class="list" id="list"></ul>
-  <p class="foot">Anonymous usage statistics (visits and time on page) are collected to improve these dashboards. No names or IP addresses are stored.</p>
+  <p class="lede">Each team has its own private link. Open the link your team received by email to view your dashboard.</p>
+  <p class="foot">Can't find your link? Contact the Data team in Sales &amp; Marketing.</p>
 </main>
-<script>
-  (function () {
-    var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
-    var p = new URLSearchParams(location.search);
-    try {
-      if (p.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
-      if (p.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
-    } catch (e) {}
-    var src = p.get("src");
-    var R = window.PORTAL.REPORTS, keys = Object.keys(R);
-    document.getElementById("list").innerHTML = keys.map(function (k, i) {
-      var r = R[k];
-      return '<li><a href="' + esc(k) + '/' + (src ? "?src=" + encodeURIComponent(src) : "") + '"' + (i === 0 ? ' class="featured"' : "") + '>' +
-        '<span class="tile">' + esc(r.title.charAt(0)) + '</span>' +
-        '<span class="txt"><span class="name">' + esc(r.title) + '</span><span class="team">' + esc(r.team) + '</span></span>' +
-        '<svg class="go" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>' +
-        '</a></li>';
-    }).join("");
-  })();
-</script>
 </body>
 </html>

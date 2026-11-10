@@ -31,6 +31,9 @@ DASHBOARDS = [
 ]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+import hashlib
+VIEWER_JS = open(os.path.join(ROOT, "assets", "viewer.js")).read()
+VER = hashlib.sha1(open(os.path.join(ROOT, "assets", "portal.css"), "rb").read()).hexdigest()[:8]
 SITE = "https://lab-sales.github.io/"
 
 VIEWER = """<!doctype html>
@@ -39,12 +42,11 @@ VIEWER = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="referrer" content="no-referrer">
 <title>{title}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/portal.css">
+<link rel="stylesheet" href="../assets/portal.css?v={ver}">
 </head>
 <body class="viewer">
 <header class="vbar">
@@ -54,7 +56,9 @@ VIEWER = """<!doctype html>
 <iframe id="report" title="{title}" allowfullscreen></iframe>
 <p class="note">Anonymous usage statistics (visits and time on page) are collected to improve this dashboard. No names or IP addresses are stored.</p>
 <script>window.PORTAL = {config};</script>
-<script src="../assets/viewer.js"></script>
+<script>
+{viewer_js}
+</script>
 </body>
 </html>
 """
@@ -75,7 +79,8 @@ for key, title, team, code, url in DASHBOARDS:
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, "index.html"), "w") as f:
         f.write(VIEWER.format(title=html.escape(title), team=html.escape(team),
-                              config=json.dumps(cfg).replace("</", "<\\/")))
+                              config=json.dumps(cfg).replace("</", "<\\/"),
+                              viewer_js=VIEWER_JS, ver=VER))
     open(os.path.join(d, ".generated"), "w").close()
     links.append(f"{team}: {SITE}{folder}/")
 

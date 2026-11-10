@@ -4,12 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="referrer" content="no-referrer">
 <title>Magnovia Sales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/portal.css">
+<link rel="stylesheet" href="../assets/portal.css?v=d545bfb5">
 </head>
 <body class="viewer">
 <header class="vbar">
@@ -19,6 +18,93 @@
 <iframe id="report" title="Magnovia Sales" allowfullscreen></iframe>
 <p class="note">Anonymous usage statistics (visits and time on page) are collected to improve this dashboard. No names or IP addresses are stored.</p>
 <script>window.PORTAL = {"SUPABASE_URL": "https://slygodiwvaaqxtwekupi.supabase.co", "SUPABASE_KEY": "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG", "HEARTBEAT_SECONDS": 15, "REPORT": {"key": "magnovia-sales", "title": "Magnovia Sales", "url": "https://app.powerbi.com/view?r=eyJrIjoiYTUyODE2OTgtMDE2OS00NzJjLWEyNzMtZDc3OTg5NDhkMTg0IiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"}};</script>
-<script src="../assets/viewer.js"></script>
+<script>
+/* Shows one dashboard and records anonymous usage (visits and time on screen). */
+(function () {
+  const C = window.PORTAL;
+  const report = C && C.REPORT;
+  const key = report && report.key;
+  const params = new URLSearchParams(location.search);
+  const iframe = document.getElementById("report");
+
+  if (!report) return;
+  iframe.src = report.url;
+
+  // Owner opt-out: open any page once with ?notrack=1 (or ?notrack=0 to re-enable)
+  try {
+    if (params.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
+    if (params.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
+    if (localStorage.getItem("pbi_notrack") === "1") return;
+  } catch (e) { /* storage blocked: keep tracking */ }
+
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+  }
+
+  let visitorId;
+  try {
+    visitorId = localStorage.getItem("pbi_vid");
+    if (!visitorId) { visitorId = uuid(); localStorage.setItem("pbi_vid", visitorId); }
+  } catch (e) { visitorId = uuid(); }
+
+  const sessionId = uuid();
+  const ua = navigator.userAgent;
+  const device = /iPad|Tablet/i.test(ua) ? "tablet" : /Mobi|Android|iPhone/i.test(ua) ? "mobile" : "desktop";
+
+  function rpc(fn, body, keepalive) {
+    return fetch(C.SUPABASE_URL + "/rest/v1/rpc/" + fn, {
+      method: "POST",
+      keepalive: !!keepalive,
+      headers: { "Content-Type": "application/json", "apikey": C.SUPABASE_KEY },
+      body: JSON.stringify(body)
+    }).catch(() => {});
+  }
+
+  rpc("track_start", {
+    p_session_id: sessionId,
+    p_visitor_id: visitorId,
+    p_report_key: key,
+    p_src: params.get("src"),
+    p_referrer: document.referrer || null,
+    p_device: device,
+    p_screen: screen.width + "x" + screen.height,
+    p_language: navigator.language || null,
+    p_timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null,
+    p_user_agent: ua
+  });
+
+  let activeSince = document.visibilityState === "visible" ? Date.now() : null;
+  let pendingMs = 0, engaged = false, engagedSent = false;
+
+  function flush(final) {
+    const now = Date.now();
+    if (activeSince !== null) {
+      pendingMs += now - activeSince;
+      activeSince = (!final && document.visibilityState === "visible") ? now : null;
+    }
+    const secs = Math.floor(pendingMs / 1000);
+    const sendEngaged = engaged && !engagedSent;
+    if (secs <= 0 && !sendEngaged) return;
+    pendingMs -= secs * 1000;
+    if (sendEngaged) engagedSent = true;
+    rpc("track_ping", { p_session_id: sessionId, p_active_delta: secs, p_engaged: sendEngaged }, true);
+  }
+
+  setInterval(() => { if (document.visibilityState === "visible") flush(false); }, (C.HEARTBEAT_SECONDS || 15) * 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flush(false);
+    else activeSince = Date.now();
+  });
+  window.addEventListener("pagehide", () => flush(true));
+  window.addEventListener("blur", () => {
+    setTimeout(() => {
+      if (document.activeElement === iframe && !engaged) { engaged = true; flush(false); }
+    }, 0);
+  });
+})();
+
+</script>
 </body>
 </html>

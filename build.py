@@ -28,6 +28,8 @@ DASHBOARDS = [
      "https://app.powerbi.com/view?r=eyJrIjoiMGEyZDQ0NTUtN2I3NC00M2QwLWJjOTUtOTcyMTM5MTQwODg5IiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"),
     ("magnovia-sales", "Magnovia Sales", "Magnovia team", "e8521c35",
      "https://app.powerbi.com/view?r=eyJrIjoiYTUyODE2OTgtMDE2OS00NzJjLWEyNzMtZDc3OTg5NDhkMTg0IiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"),
+    ("market-access-sales", "Market Access Sales", "Market Access team", "56f979fb",
+     "https://app.powerbi.com/view?r=eyJrIjoiYTZlYmNiYTktOGE1OC00MTI5LWEwNDctZjFlZjBhMTIzMzNkIiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"),
 ]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))

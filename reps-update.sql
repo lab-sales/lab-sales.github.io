@@ -64,12 +64,9 @@ grant execute on function public.track_rep(uuid, text) to anon;
 
 -- 5) Stats page numbers (PIN required). Same signature as before.
 --
--- How "people" is counted:
---   * a visit with a chosen name counts as that rep
---   * older visits from a phone or browser where a rep later picked their
---     name are credited to that rep (so nobody is counted twice)
---   * older visits from browsers that never picked a name still count as
---     one person each, as before, so the count so far is not lost
+-- How "people" is counted: only reps who picked their name in the picker.
+-- Visits without a name (before the picker, or if it was skipped) still
+-- count as views, but not as people.
 create or replace function public.get_usage_stats(
   p_pin    text,
   p_days   integer default 30,   -- 0 or null = all time
@@ -103,20 +100,10 @@ begin
                  else date_trunc('day', now() at time zone 'Africa/Nairobi') at time zone 'Africa/Nairobi'
                       - make_interval(days => least(p_days, 3650) - 1) end;
 
-  with dev as (            -- first rep ever chosen on each browser
-    select distinct on (visitor_id) visitor_id, rep_id as dev_rep
-      from public.pbi_sessions
-     where rep_id is not null
-     order by visitor_id, started_at
-  ),
-  s as (
-    select p.*,
-           coalesce(p.rep_id, d.dev_rep) as eff_rep,
-           coalesce('r:' || coalesce(p.rep_id, d.dev_rep), 'd:' || p.visitor_id::text) as person
-      from public.pbi_sessions p
-      left join dev d on d.visitor_id = p.visitor_id
-     where p.started_at >= v_from
-       and (p_report is null or p.report_key = p_report)
+  with s as (
+    select * from public.pbi_sessions
+     where started_at >= v_from
+       and (p_report is null or report_key = p_report)
   )
   select json_build_object(
     'ok', true,
@@ -131,9 +118,9 @@ begin
     'reps_total', (select count(*) from public.pbi_reps where active),
     'totals', (select json_build_object(
                   'views',           count(*),
-                  'unique_visitors', count(distinct person),
-                  'named_people',    count(distinct eff_rep),
-                  'unnamed_people',  count(distinct person) filter (where eff_rep is null),
+                  'unique_visitors', count(distinct rep_id),
+                  'named_people',    count(distinct rep_id),
+                  'unnamed_views',   count(*) filter (where rep_id is null),
                   'avg_seconds',     coalesce(round(avg(active_seconds)), 0),
                   'median_seconds',  coalesce(round(percentile_cont(0.5) within group (order by active_seconds)), 0),
                   'total_seconds',   coalesce(sum(active_seconds), 0),
@@ -143,8 +130,8 @@ begin
     'by_report', (select coalesce(json_agg(r order by r.views desc), '[]'::json) from (
                     select report_key,
                            count(*)                    as views,
-                           count(distinct person)      as unique_visitors,
-                           count(distinct eff_rep)     as named_people,
+                           count(distinct rep_id)      as unique_visitors,
+                           count(distinct rep_id)      as named_people,
                            round(avg(active_seconds))  as avg_seconds,
                            sum(active_seconds)         as total_seconds
                       from s group by report_key) r),
@@ -155,13 +142,13 @@ begin
                         max(s.started_at)                   as last_seen,
                         coalesce(json_agg(distinct s.report_key) filter (where s.report_key is not null), '[]'::json) as reports
                    from public.pbi_reps r
-                   left join s on s.eff_rep = r.rep_id
+                   left join s on s.rep_id = r.rep_id
                   group by r.rep_id, r.display_name, r.active
                  having r.active or count(s.session_id) > 0) x),
     'daily', (select coalesce(json_agg(d order by d.day), '[]'::json) from (
                 select (started_at at time zone 'Africa/Nairobi')::date as day,
                        count(*)                   as views,
-                       count(distinct person)     as visitors,
+                       count(distinct rep_id)     as visitors,
                        round(avg(active_seconds)) as avg_seconds
                   from s group by 1) d),
     'by_src', (select coalesce(json_agg(x order by x.views desc), '[]'::json) from (
@@ -172,9 +159,9 @@ begin
                       from s group by 1) x),
     'recent', (select coalesce(json_agg(x), '[]'::json) from (
                  select s.started_at, s.report_key, coalesce(s.src, 'direct') as src,
-                        s.device, s.active_seconds, s.engaged, rp.display_name as rep_name,
+                        s.device, s.active_seconds, s.engaged, s.rep_name,
                         s.last_seen_at > now() - interval '45 seconds' as live
-                   from s left join public.pbi_reps rp on rp.rep_id = s.eff_rep
+                   from s
                   order by s.started_at desc limit 25) x)
   ) into v_result;
 

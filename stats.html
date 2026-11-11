@@ -434,10 +434,9 @@ const CONFIG = {
       ? "They stayed <strong>" + dur(t.avg_seconds) + "</strong> on average, <strong>" + dur(t.total_seconds) + "</strong> in total."
       : "No one has opened a dashboard in this range yet. Share a link to get started.";
     $("hRange").textContent = d.from ? dayShort(d.from) + " to " + dayShort(d.to) : "All time";
-    if (t.named_people != null && t.unique_visitors) {
-      $("hLine3").innerHTML = "<b>" + nf(t.named_people) + "</b> named " + plural(t.named_people, "rep", "reps") +
-        (t.unnamed_people ? " and <b>" + nf(t.unnamed_people) + "</b> " + plural(t.unnamed_people, "browser", "browsers") +
-          " from before the name picker (each counted as one person)" : "") + ".";
+    if (t.unnamed_views != null && t.views) {
+      $("hLine3").innerHTML = "People are reps who picked their name." +
+        (t.unnamed_views ? " <b>" + nf(t.unnamed_views) + "</b> of the views came without a name, mostly from before the name picker." : "");
       $("hLine3").classList.remove("hidden");
     } else $("hLine3").classList.add("hidden");
     setNum("fEngaged", pct(t.engaged, t.views), pt && pct(pt.engaged, pt.views));
@@ -454,7 +453,6 @@ const CONFIG = {
       '<span class="dash-views">' + nf(r.views) + "<small>" + plural(r.views, "view", "views") + "</small></span></div>" +
       '<div class="share"><div style="width:' + Math.max(2, 100 * r.views / Math.max(1, t.views)) + '%"></div></div>' +
       '<div class="dash-stats"><span><b>' + nf(r.unique_visitors) + "</b> " + plural(r.unique_visitors, "person", "people") + "</span>" +
-      (r.named_people != null ? "<span><b>" + nf(r.named_people) + "</b> named " + plural(r.named_people, "rep", "reps") + "</span>" : "") +
       "<span><b>" + dur(r.avg_seconds) + "</b> average</span><span><b>" + dur(r.total_seconds) + "</b> total</span></div></div>"
     ).join("") : '<div class="empty">No views in this range yet.</div>';
 

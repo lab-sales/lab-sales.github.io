@@ -42,7 +42,7 @@ Before a dashboard opens, the rep picks their name from a searchable list. It is
 - Your own devices that opened `?notrack=1` skip the picker. Add `&picker=1` to preview it.
 - If the name list can't be loaded, the dashboard opens anyway, so nobody is locked out.
 
-How people are counted: a visit with a name counts as that rep. Earlier visits from the same browser are credited to the rep who later picks a name there. Browsers that never picked a name still count as one person each, so the earlier count is kept.
+How people are counted: only reps who picked their name. Visits without a name (mostly from before the picker) still count as views, not as people.
 
 ## Stats page
 

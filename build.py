@@ -51,10 +51,10 @@ VIEWER = """<!doctype html>
 <body class="viewer">
 <header class="vbar">
   <span class="vtitle"><span class="dot"></span>{title}</span>
-  <span class="vteam">{team}</span>
+  <span class="vright"><span class="vteam">{team}</span><button class="vwho" id="who" type="button" hidden></button></span>
 </header>
 <iframe id="report" title="{title}" allowfullscreen></iframe>
-<p class="note">Anonymous usage statistics (visits and time on page) are collected to improve this dashboard. No names or IP addresses are stored.</p>
+<p class="note">Usage statistics (the name you pick, visits and time on page) are collected to improve this dashboard. No IP addresses are stored.</p>
 <script>window.PORTAL = {config};</script>
 <script>
 {viewer_js}

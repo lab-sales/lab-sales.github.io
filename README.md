@@ -24,12 +24,25 @@ Not tracked: clicks inside the report (slicers, page tabs). Publish to Web block
 | `schema.sql` | Supabase table, tracking functions, reporting views, read-only Power BI login |
 | `stats.html` | PIN-protected page showing views and time spent |
 | `stats.sql`, `stats-update.sql` | Supabase setup for the stats page |
+| `reps-update.sql` | Rep name picker: rep table, `get_reps`, `track_rep`, people counted by rep |
 
 ## Team links
 
 Each team gets a private link with a code (for example `/noiva-sales-xxxxxxxx/`). Run `python3 build.py` to print the current list. Pages have no menu or "all dashboards" button, so a team can only see the dashboard it was sent.
 
 Open `https://lab-sales.github.io/?notrack=1` once on each of your own devices so your visits are not counted.
+
+## Rep name picker
+
+Before a dashboard opens, the rep picks their name from a searchable list. It is asked once per phone or browser, and the name shows top right with a "Change" option. The stats page then counts **people by rep** and lists who has and hasn't opened a dashboard.
+
+- Names live in Supabase (`pbi_reps`), not in this repo. Only first-time visitors' browsers fetch them, through `get_reps`.
+- Setup: run `reps-update.sql`, then the private `reps-list.sql` (kept outside this public repo) in the Supabase SQL Editor.
+- Add a rep: insert a row (or add a line to `reps-list.sql` and re-run it). Remove: `update public.pbi_reps set active = false where rep_id = '123';` (history is kept).
+- Your own devices that opened `?notrack=1` skip the picker. Add `&picker=1` to preview it.
+- If the name list can't be loaded, the dashboard opens anyway, so nobody is locked out.
+
+How people are counted: a visit with a name counts as that rep. Earlier visits from the same browser are credited to the rep who later picks a name there. Browsers that never picked a name still count as one person each, so the earlier count is kept.
 
 ## Stats page
 

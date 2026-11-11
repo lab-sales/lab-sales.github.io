@@ -8,101 +8,249 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/portal.css?v=d545bfb5">
+<link rel="stylesheet" href="../assets/portal.css?v=a5547b42">
 </head>
 <body class="viewer">
 <header class="vbar">
   <span class="vtitle"><span class="dot"></span>Noiva Sales</span>
-  <span class="vteam">Noiva team</span>
+  <span class="vright"><span class="vteam">Noiva team</span><button class="vwho" id="who" type="button" hidden></button></span>
 </header>
 <iframe id="report" title="Noiva Sales" allowfullscreen></iframe>
-<p class="note">Anonymous usage statistics (visits and time on page) are collected to improve this dashboard. No names or IP addresses are stored.</p>
+<p class="note">Usage statistics (the name you pick, visits and time on page) are collected to improve this dashboard. No IP addresses are stored.</p>
 <script>window.PORTAL = {"SUPABASE_URL": "https://slygodiwvaaqxtwekupi.supabase.co", "SUPABASE_KEY": "sb_publishable_p7aJfsR1f8PO1YDcpt7aqw_n55TljCG", "HEARTBEAT_SECONDS": 15, "REPORT": {"key": "noiva-sales", "title": "Noiva Sales", "url": "https://app.powerbi.com/view?r=eyJrIjoiMTRkOWZmMTgtODVhOS00Y2ZlLWE4Y2YtOGJkY2IwZmQ2MGVmIiwidCI6ImVkY2YyOTM1LTE4ZDQtNDg1Ni1iM2Q3LWEzMjEyM2JhZjgwOCIsImMiOjh9"}};</script>
 <script>
-/* Shows one dashboard and records anonymous usage (visits and time on screen). */
+/* Shows one dashboard, asks the rep to pick their name once per browser,
+   and records usage (visits and time on screen) against that rep. */
 (function () {
   const C = window.PORTAL;
   const report = C && C.REPORT;
   const key = report && report.key;
   const params = new URLSearchParams(location.search);
   const iframe = document.getElementById("report");
+  const whoBtn = document.getElementById("who");
+  const REP_KEY = "pbi_rep";
 
   if (!report) return;
-  iframe.src = report.url;
+  iframe.src = report.url; // starts loading behind the name picker, so it is ready sooner
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  const initials = n => String(n || "?").split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const firstLast = n => { const p = String(n || "").split(/\s+/).filter(Boolean); return p.length > 1 ? p[0] + " " + p[p.length - 1] : (p[0] || ""); };
 
   // Owner opt-out: open any page once with ?notrack=1 (or ?notrack=0 to re-enable)
-  try {
-    if (params.get("notrack") === "1") localStorage.setItem("pbi_notrack", "1");
-    if (params.get("notrack") === "0") localStorage.removeItem("pbi_notrack");
-    if (localStorage.getItem("pbi_notrack") === "1") return;
-  } catch (e) { /* storage blocked: keep tracking */ }
-
-  function uuid() {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
-  }
-
-  let visitorId;
-  try {
-    visitorId = localStorage.getItem("pbi_vid");
-    if (!visitorId) { visitorId = uuid(); localStorage.setItem("pbi_vid", visitorId); }
-  } catch (e) { visitorId = uuid(); }
-
-  const sessionId = uuid();
-  const ua = navigator.userAgent;
-  const device = /iPad|Tablet/i.test(ua) ? "tablet" : /Mobi|Android|iPhone/i.test(ua) ? "mobile" : "desktop";
+  let notrack = false;
+  if (params.get("notrack") === "1") store.set("pbi_notrack", "1");
+  if (params.get("notrack") === "0") store.del("pbi_notrack");
+  notrack = store.get("pbi_notrack") === "1";
 
   function rpc(fn, body, keepalive) {
     return fetch(C.SUPABASE_URL + "/rest/v1/rpc/" + fn, {
       method: "POST",
       keepalive: !!keepalive,
       headers: { "Content-Type": "application/json", "apikey": C.SUPABASE_KEY },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body || {})
+    });
+  }
+
+  /* ---------------- who is viewing ---------------- */
+  function savedRep() {
+    try { const r = JSON.parse(store.get(REP_KEY) || "null"); return r && r.id && r.name ? r : null; } catch (e) { return null; }
+  }
+  function showWho(rep) {
+    if (!whoBtn) return;
+    if (!rep) { whoBtn.hidden = true; return; }
+    whoBtn.hidden = false;
+    whoBtn.innerHTML = '<span class="av">' + esc(initials(rep.name)) + '</span><span class="nm">' + esc(firstLast(rep.name)) +
+      '</span><span class="chg">Change</span>';
+    whoBtn.setAttribute("aria-label", "Viewing as " + rep.name + ". Change name");
+  }
+
+  let repList = null;
+  function loadReps() {
+    const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 8000));
+    return Promise.race([rpc("get_reps").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }), timeout])
+      .then(list => { repList = Array.isArray(list) ? list : []; return repList; })
+      .catch(() => null);
+  }
+
+  function openPicker(opts) {
+    opts = opts || {};
+    return new Promise(resolve => {
+      const ov = document.createElement("div");
+      ov.className = "picker";
+      ov.setAttribute("role", "dialog");
+      ov.setAttribute("aria-modal", "true");
+      ov.setAttribute("aria-labelledby", "pk-h");
+      ov.innerHTML =
+        '<div class="pk-card">' +
+          '<div class="pk-head">' +
+            '<div class="pk-kicker"><span class="dot"></span>' + esc(report.title) + "</div>" +
+            '<h1 id="pk-h">' + (opts.change ? "Change your name" : "Who’s viewing?") + "</h1>" +
+            "<p>" + (opts.change ? "Pick the right name below." : "Find and select your name to open the dashboard. You only do this once on this device.") + "</p>" +
+            '<label class="pk-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+            '<input type="search" id="pk-q" placeholder="Type your name" autocomplete="off" autocapitalize="words" spellcheck="false" aria-label="Search your name"></label>' +
+          "</div>" +
+          '<div class="pk-list" id="pk-list" role="listbox" aria-label="Names"></div>' +
+          '<div class="pk-foot">' +
+            (opts.change ? '<button class="pk-cancel" id="pk-cancel" type="button">Cancel</button>' : "") +
+            '<button class="pk-go" id="pk-go" type="button" disabled>Select your name</button>' +
+          "</div>" +
+        "</div>";
+      document.body.appendChild(ov);
+      document.body.classList.add("picking");
+
+      const q = ov.querySelector("#pk-q"), listEl = ov.querySelector("#pk-list"), go = ov.querySelector("#pk-go");
+      const items = repList.map(r => ({ id: String(r.id), name: r.name, key: norm(r.name) + " " + r.id }));
+      let chosen = null;
+
+      function render() {
+        const terms = norm(q.value).split(" ").filter(Boolean);
+        const hits = terms.length ? items.filter(it => terms.every(t => it.key.indexOf(t) !== -1)) : items;
+        listEl.innerHTML = hits.length ? hits.map(it =>
+          '<button type="button" role="option" class="pk-item' + (chosen && chosen.id === it.id ? " on" : "") + '" data-id="' + esc(it.id) + '" aria-selected="' + (chosen && chosen.id === it.id) + '">' +
+          '<span class="av">' + esc(initials(it.name)) + '</span><span class="nm">' + esc(it.name) + '</span><span class="code">' + esc(it.id) + "</span>" +
+          '<svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button>'
+        ).join("") : '<div class="pk-none">No name matches “' + esc(q.value) + '”.<br>Check the spelling, or ask the sales admin to add you.</div>';
+      }
+      function pick(id) {
+        chosen = items.find(it => it.id === id) || null;
+        go.disabled = !chosen;
+        go.textContent = chosen ? "Continue as " + firstLast(chosen.name) : "Select your name";
+        render();
+      }
+      function close(result) {
+        ov.remove();
+        document.body.classList.remove("picking");
+        resolve(result);
+      }
+
+      listEl.addEventListener("click", e => { const b = e.target.closest(".pk-item"); if (b) pick(b.dataset.id); });
+      q.addEventListener("input", () => {
+        render();
+        const only = listEl.querySelectorAll(".pk-item");
+        if (only.length === 1) pick(only[0].dataset.id);
+      });
+      q.addEventListener("keydown", e => { if (e.key === "Enter" && chosen) go.click(); });
+      go.addEventListener("click", () => { if (chosen) close({ id: chosen.id, name: chosen.name }); });
+      const cancel = ov.querySelector("#pk-cancel");
+      if (cancel) cancel.addEventListener("click", () => close(null));
+      if (opts.current) pick(String(opts.current.id));
+      else render();
+      if (!matchMedia("(pointer: coarse)").matches) setTimeout(() => q.focus(), 60);
+    });
+  }
+
+  /* ---------------- usage tracking ---------------- */
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+  }
+  let visitorId = store.get("pbi_vid");
+  if (!visitorId) { visitorId = uuid(); store.set("pbi_vid", visitorId); }
+  const sessionId = uuid();
+  let started = null; // promise for track_start
+
+  function track(rep) {
+    if (notrack || started) return;
+    const ua = navigator.userAgent;
+    const device = /iPad|Tablet/i.test(ua) ? "tablet" : /Mobi|Android|iPhone/i.test(ua) ? "mobile" : "desktop";
+    started = rpc("track_start", {
+      p_session_id: sessionId,
+      p_visitor_id: visitorId,
+      p_report_key: key,
+      p_src: params.get("src"),
+      p_referrer: document.referrer || null,
+      p_device: device,
+      p_screen: screen.width + "x" + screen.height,
+      p_language: navigator.language || null,
+      p_timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null,
+      p_user_agent: ua
     }).catch(() => {});
-  }
+    if (rep) setRepOnSession(rep);
 
-  rpc("track_start", {
-    p_session_id: sessionId,
-    p_visitor_id: visitorId,
-    p_report_key: key,
-    p_src: params.get("src"),
-    p_referrer: document.referrer || null,
-    p_device: device,
-    p_screen: screen.width + "x" + screen.height,
-    p_language: navigator.language || null,
-    p_timezone: (Intl.DateTimeFormat().resolvedOptions().timeZone) || null,
-    p_user_agent: ua
-  });
+    let activeSince = document.visibilityState === "visible" ? Date.now() : null;
+    let pendingMs = 0, engaged = false, engagedSent = false;
 
-  let activeSince = document.visibilityState === "visible" ? Date.now() : null;
-  let pendingMs = 0, engaged = false, engagedSent = false;
-
-  function flush(final) {
-    const now = Date.now();
-    if (activeSince !== null) {
-      pendingMs += now - activeSince;
-      activeSince = (!final && document.visibilityState === "visible") ? now : null;
+    function flush(final) {
+      const now = Date.now();
+      if (activeSince !== null) {
+        pendingMs += now - activeSince;
+        activeSince = (!final && document.visibilityState === "visible") ? now : null;
+      }
+      const secs = Math.floor(pendingMs / 1000);
+      const sendEngaged = engaged && !engagedSent;
+      if (secs <= 0 && !sendEngaged) return;
+      pendingMs -= secs * 1000;
+      if (sendEngaged) engagedSent = true;
+      rpc("track_ping", { p_session_id: sessionId, p_active_delta: secs, p_engaged: sendEngaged }, true).catch(() => {});
     }
-    const secs = Math.floor(pendingMs / 1000);
-    const sendEngaged = engaged && !engagedSent;
-    if (secs <= 0 && !sendEngaged) return;
-    pendingMs -= secs * 1000;
-    if (sendEngaged) engagedSent = true;
-    rpc("track_ping", { p_session_id: sessionId, p_active_delta: secs, p_engaged: sendEngaged }, true);
+
+    setInterval(() => { if (document.visibilityState === "visible") flush(false); }, (C.HEARTBEAT_SECONDS || 15) * 1000);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flush(false);
+      else activeSince = Date.now();
+    });
+    window.addEventListener("pagehide", () => flush(true));
+    window.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (document.activeElement === iframe && !engaged) { engaged = true; flush(false); }
+      }, 0);
+    });
+  }
+  function setRepOnSession(rep) {
+    if (notrack || !started || !rep) return;
+    started.then(() => rpc("track_rep", { p_session_id: sessionId, p_rep_id: rep.id }).catch(() => {}));
   }
 
-  setInterval(() => { if (document.visibilityState === "visible") flush(false); }, (C.HEARTBEAT_SECONDS || 15) * 1000);
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") flush(false);
-    else activeSince = Date.now();
+  /* ---------------- start ---------------- */
+  function useRep(rep) {
+    if (rep) store.set(REP_KEY, JSON.stringify({ id: rep.id, name: rep.name }));
+    showWho(rep);
+    track(rep);
+  }
+
+  if (whoBtn) whoBtn.addEventListener("click", async () => {
+    if (!repList) await loadReps();
+    if (!repList || !repList.length) return;
+    const cur = savedRep();
+    const rep = await openPicker({ change: true, current: cur });
+    if (rep && (!cur || rep.id !== cur.id)) {
+      store.set(REP_KEY, JSON.stringify(rep));
+      showWho(rep);
+      setRepOnSession(rep);
+    }
   });
-  window.addEventListener("pagehide", () => flush(true));
-  window.addEventListener("blur", () => {
-    setTimeout(() => {
-      if (document.activeElement === iframe && !engaged) { engaged = true; flush(false); }
-    }, 0);
-  });
+
+  const known = savedRep();
+  if (notrack && params.get("picker") !== "1") {
+    // Owner devices (opened once with ?notrack=1) skip the name picker. Add &picker=1 to preview it.
+    showWho(known);
+  } else if (known) {
+    // Known on this browser: open straight away, then quietly check the name is still on the list
+    useRep(known);
+    loadReps().then(list => {
+      if (list && list.length && !list.some(r => String(r.id) === known.id)) {
+        store.del(REP_KEY);
+        showWho(null);
+        openPicker().then(rep => { if (rep) { store.set(REP_KEY, JSON.stringify(rep)); showWho(rep); setRepOnSession(rep); } });
+      }
+    });
+  } else {
+    document.body.classList.add("picking");
+    loadReps().then(list => {
+      document.body.classList.remove("picking");
+      if (list && list.length) openPicker().then(useRep);
+      else useRep(null); // name list unavailable: never block the dashboard
+    });
+  }
 })();
 
 </script>
